@@ -56,7 +56,7 @@ const CategoryMatchingComponent = ({ questionSet, answers, setAnswer, isPlaying 
       {questionSet.questions.map((question, index) => (
         <QuestionWrapper key={index} isPlaying={isPlaying}>
           <QuestionText>
-            <strong>{question.questionNo}</strong> {renderQuestion(question)}
+            <strong>{question.questionNo}a</strong> {renderQuestion(question)}
           </QuestionText>
         </QuestionWrapper>
       ))}
