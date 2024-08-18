@@ -1,14 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Button, message } from 'antd';
-import styled from 'styled-components';
-import { setAnswer } from './store';
-import { listeningData } from './listeningData ';
+import { Button, message, Progress, Modal } from 'antd';import styled from 'styled-components';
+import { setAnswer, setCurrentPart, submitAnswers } from './utils/actions';
+import { listeningData } from './listeningData';
 import MCQComponent from './questionType/MCQComponent';
 import ShortAnswerComponent from './questionType/ShortAnswerComponent';
 import FillInTheBlankComponent from './questionType/FillInTheBlankComponent';
 import CategoryMatchingComponent from './questionType/CategoryMatchingComponent';
-import LinearFooter from './ListeningFooter';
+import PartNavigation from './PartNavigation';
+import aud from '../assets/audio.mp3';
+
+// ... (previous styled components remain the same)
 
 const AudioPlayer = styled.audio`
   width: 100%;
@@ -18,44 +20,85 @@ const AudioPlayer = styled.audio`
 const ContentContainer = styled.div`
   margin-bottom: 60px; // Add space for the footer
 `;
+const SubmitButton = styled(Button)`
+  margin-top: 20px;
+`;
+
+const ProgressWrapper = styled.div`
+  margin-top: 20px;
+  margin-bottom: 20px;
+`;
+
 
 const ListeningSection = () => {
-  const [currentPart, setCurrentPart] = useState(0);
-  const [currentQuestion, setCurrentQuestion] = useState(1);
-  const [isPlaying, setIsPlaying] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [audioTime, setAudioTime] = useState(0);
+  const currentPart = useSelector(state => state.currentPart);
   const answers = useSelector(state => state.answers);
   const dispatch = useDispatch();
 
-  const currentPartData = listeningData.parts[currentPart];
-  const totalQuestions = currentPartData.questions.reduce(
-    (total, questionSet) => total + questionSet.questions.length,
+  const currentPartData = useMemo(() => {
+    return listeningData.parts.find(part => 
+      audioTime >= part.startTime && audioTime < part.endTime
+    ) || listeningData.parts[0];
+  }, [audioTime]);
+
+  const totalQuestions = useMemo(() => listeningData.parts.reduce(
+    (total, part) => total + part.questions.reduce(
+      (partTotal, questionSet) => partTotal + questionSet.questions.length,
+      0
+    ),
     0
+  ), []);
+
+  const answeredQuestions = useMemo(() => 
+    Object.values(answers).filter(answer => answer !== null && answer !== '').length,
+    [answers]
   );
 
   useEffect(() => {
     const audio = document.getElementById('audioPlayer');
-    audio.addEventListener('ended', handleAudioEnd);
-    return () => audio.removeEventListener('ended', handleAudioEnd);
-  }, [currentPart]);
+    
+    const handleTimeUpdate = () => {
+      setAudioTime(audio.currentTime);
+    };
 
-  const handleAudioEnd = () => {
-    setIsPlaying(false);
-    if (currentPart < listeningData.parts.length - 1) {
-      message.info('Please review your answers before moving to the next part.');
-    } else {
+    const handleEnded = () => {
+      setIsPlaying(false);
       message.success('You have completed the listening test!');
+    };
+
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    audio.addEventListener('ended', handleEnded);
+
+    return () => {
+      audio.removeEventListener('timeupdate', handleTimeUpdate);
+      audio.removeEventListener('ended', handleEnded);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (currentPartData.part !== currentPart) {
+      dispatch(setCurrentPart(currentPartData.part));
     }
-  };
+  }, [currentPartData, currentPart, dispatch]);
 
   const startListening = () => {
     const audio = document.getElementById('audioPlayer');
-    audio.currentTime = currentPartData.startTime;
     audio.play();
     setIsPlaying(true);
   };
 
   const handleSetAnswer = (questionNo, answer) => {
     dispatch(setAnswer(questionNo, answer));
+  };
+
+  const handlePartChange = (partNumber) => {
+    const targetPart = listeningData.parts[partNumber - 1];
+    const audio = document.getElementById('audioPlayer');
+    audio.currentTime = targetPart.startTime;
+    setAudioTime(targetPart.startTime);
+    dispatch(setCurrentPart(partNumber));
   };
 
   const renderQuestionSet = (questionSet) => {
@@ -80,14 +123,31 @@ const ListeningSection = () => {
     }
   };
 
-  const handleQuestionClick = (questionNumber) => {
-    setCurrentQuestion(questionNumber);
-    // You may want to add logic here to scroll to the selected question
+  const handleSubmit = () => {
+    Modal.confirm({
+      title: 'Submit Answers',
+      content: `You have answered ${answeredQuestions} out of ${totalQuestions} questions. Are you sure you want to submit?`,
+      onOk() {
+        const submittedAnswers = {};
+        for (let i = 1; i <= totalQuestions; i++) {
+          submittedAnswers[i] = answers[i] || null;
+        }
+        dispatch(submitAnswers(submittedAnswers));
+        
+        console.log('Submitted Answers:', submittedAnswers);
+        
+        message.success('Answers submitted successfully!');
+      },
+      onCancel() {
+        // User canceled submission
+      },
+    });
   };
 
   return (
     <ContentContainer>
       <h1>IELTS Listening Test</h1>
+     
       <h2>Part {currentPartData.part}</h2>
       <AudioPlayer id="audioPlayer" controls src={listeningData.audio.src} />
       {!isPlaying && (
@@ -95,16 +155,22 @@ const ListeningSection = () => {
           Start Listening
         </Button>
       )}
+      <ProgressWrapper>
+        <Progress 
+          percent={(answeredQuestions / totalQuestions) * 100} 
+          format={() => `${answeredQuestions}/${totalQuestions}`}
+        />
+      </ProgressWrapper>
       {currentPartData.questions.map((questionSet, index) => (
         <div key={index}>
           {renderQuestionSet(questionSet)}
         </div>
       ))}
-      <LinearFooter 
-        currentPart={currentPart + 1}
-        currentQuestion={currentQuestion}
-        totalQuestions={totalQuestions}
-        onQuestionClick={handleQuestionClick}
+      <PartNavigation
+        parts={listeningData.parts}
+        currentPart={currentPart}
+        onPartChange={handlePartChange}
+        onSubmit={handleSubmit}
       />
     </ContentContainer>
   );

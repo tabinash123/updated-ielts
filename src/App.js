@@ -1,16 +1,14 @@
 import React from 'react';
 import { Provider } from 'react-redux';
-// import store from './listening/store';
-// import ListeningSection from './listening/ListeningSection';
-import ReadingSection from './reading/readingSection/ReadingSection';
-import store from './reading/utils/store';
+import store from './listening/utils/store';
+import ListeningSection from './listening/ListeningSection';
 
 
 function App() {
   return (
     <Provider store={store}>
-      {/* <ListeningSection /> */}
-      <ReadingSection />
+      <ListeningSection />
+   
     </Provider>
   );
 }
