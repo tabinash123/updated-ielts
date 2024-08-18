@@ -8,25 +8,29 @@ import MCQComponent from './questionType/MCQComponent';
 import ShortAnswerComponent from './questionType/ShortAnswerComponent';
 import FillInTheBlankComponent from './questionType/FillInTheBlankComponent';
 import CategoryMatchingComponent from './questionType/CategoryMatchingComponent';
+import LinearFooter from './ListeningFooter';
 
 const AudioPlayer = styled.audio`
   width: 100%;
   margin-bottom: 20px;
 `;
 
-const NavigationButtons = styled.div`
-  display: flex;
-  justify-content: space-between;
-  margin-top: 20px;
+const ContentContainer = styled.div`
+  margin-bottom: 60px; // Add space for the footer
 `;
 
 const ListeningSection = () => {
   const [currentPart, setCurrentPart] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentQuestion, setCurrentQuestion] = useState(1);
+  const [isPlaying, setIsPlaying] = useState(true);
   const answers = useSelector(state => state.answers);
   const dispatch = useDispatch();
 
   const currentPartData = listeningData.parts[currentPart];
+  const totalQuestions = currentPartData.questions.reduce(
+    (total, questionSet) => total + questionSet.questions.length,
+    0
+  );
 
   useEffect(() => {
     const audio = document.getElementById('audioPlayer');
@@ -76,38 +80,13 @@ const ListeningSection = () => {
     }
   };
 
-  const handleSubmit = () => {
-    const allQuestions = listeningData.parts.flatMap(part => 
-      part.questions.flatMap(questionSet => 
-        questionSet.questions.map(q => q.questionNo)
-      )
-    );
-
-    const finalAnswers = allQuestions.reduce((acc, questionNo) => {
-      acc[questionNo] = answers[questionNo] || null;
-      return acc;
-    }, {});
-
-    console.log('Submitted Answers:', finalAnswers);
-    message.success('Test submitted successfully!');
-  };
-
-  const goToNextPart = () => {
-    if (currentPart < listeningData.parts.length - 1) {
-      setCurrentPart(currentPart + 1);
-      setIsPlaying(false);
-    }
-  };
-
-  const goToPreviousPart = () => {
-    if (currentPart > 0) {
-      setCurrentPart(currentPart - 1);
-      setIsPlaying(false);
-    }
+  const handleQuestionClick = (questionNumber) => {
+    setCurrentQuestion(questionNumber);
+    // You may want to add logic here to scroll to the selected question
   };
 
   return (
-    <div>
+    <ContentContainer>
       <h1>IELTS Listening Test</h1>
       <h2>Part {currentPartData.part}</h2>
       <AudioPlayer id="audioPlayer" controls src={listeningData.audio.src} />
@@ -121,18 +100,13 @@ const ListeningSection = () => {
           {renderQuestionSet(questionSet)}
         </div>
       ))}
-      <NavigationButtons>
-        <Button onClick={goToPreviousPart} disabled={currentPart === 0}>
-          Previous Part
-        </Button>
-        <Button onClick={handleSubmit} type="primary">
-          Submit Test
-        </Button>
-        <Button onClick={goToNextPart} disabled={currentPart === listeningData.parts.length - 1}>
-          Next Part
-        </Button>
-      </NavigationButtons>
-    </div>
+      <LinearFooter 
+        currentPart={currentPart + 1}
+        currentQuestion={currentQuestion}
+        totalQuestions={totalQuestions}
+        onQuestionClick={handleQuestionClick}
+      />
+    </ContentContainer>
   );
 };
 

@@ -263,14 +263,18 @@ const ReadingSection = () => {
   }, [answers]);
 
   const handleSubmit = useCallback(() => {
-    if (isAllQuestionsAnswered()) {
-      const structuredAnswers = getStructuredAnswers();
+    // if (isAllQuestionsAnswered()) {
+    //   const structuredAnswers = getStructuredAnswers();
+    //   console.log('Submitted answers:', JSON.stringify(structuredAnswers, null, 2));
+    //   message.success('Test submitted successfully!');
+    //   setIsTestEnded(true);
+    // } else {
+    //   message.warning('Please answer all questions before submitting.');
+    // }
+     const structuredAnswers = getStructuredAnswers();
       console.log('Submitted answers:', JSON.stringify(structuredAnswers, null, 2));
       message.success('Test submitted successfully!');
       setIsTestEnded(true);
-    } else {
-      message.warning('Please answer all questions before submitting.');
-    }
   }, [getStructuredAnswers, isAllQuestionsAnswered]);
 
   const handleTimeUp = useCallback(() => {
@@ -376,7 +380,7 @@ const ReadingSection = () => {
   return (
     <ReadingSectionContainer>
       <TimerWrapper>
-        <Timer totalSeconds={60} onTimeUp={handleTimeUp} />
+        <Timer totalSeconds={300} onTimeUp={handleTimeUp} />
       </TimerWrapper>
       <ContentContainer>
         <PassageContainer 
@@ -389,17 +393,22 @@ const ReadingSection = () => {
           {part.questions.map(renderQuestionSet)}
         </QuestionsContainer>
       </ContentContainer>
-      <Footer />
-      <SubmitButtonWrapper>
-        <Button 
-          type="primary" 
-          size="large" 
-          onClick={handleSubmit}
-          disabled={isTestEnded || !isAllQuestionsAnswered()}
-        >
-          Submit
-        </Button>
-      </SubmitButtonWrapper>
+    <div style={{ display: 'flex', width: '100%', alignItems: 'center' }}>
+  <div style={{ width: '83%', marginRight: '2%' }}>
+    <Footer />
+  </div>
+  <SubmitButtonWrapper style={{ width: '15%' }}>
+    <Button
+      type="primary"
+      size="large"
+      onClick={handleSubmit}
+      // disabled={isTestEnded || !isAllQuestionsAnswered()}
+      style={{ width: '100%' }}
+    >
+      Submit
+    </Button>
+  </SubmitButtonWrapper>
+</div>
     </ReadingSectionContainer>
   );
 };
