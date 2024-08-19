@@ -45,13 +45,13 @@ const FillInTheBlankComponent = ({ questionSet, answers, setAnswer, isPlaying })
 
   return (
     <div>
-      <Title level={3}>{questionSet.title}</Title>
       <Title level={4}>Questions {questionRange}</Title>
+      <Title level={3}>{questionSet.title}</Title>
       <Paragraph>{questionSet.instruction}</Paragraph>
       {questionSet.questions.map((question, index) => (
         <QuestionWrapper key={index} isPlaying={isPlaying}>
           <QuestionText>
-            <strong>{question.questionNo}</strong> {renderQuestion(question)}
+            <strong>{question.questionNo} .</strong> {renderQuestion(question)}
           </QuestionText>
         </QuestionWrapper>
       ))}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Button, message, Progress, Modal } from 'antd';import styled from 'styled-components';
+import { Button, message, Progress, Modal } from 'antd';
+import styled from 'styled-components';
 import { setAnswer, setCurrentPart, submitAnswers } from './utils/actions';
 import { listeningData } from './listeningData';
 import MCQComponent from './questionType/MCQComponent';
@@ -8,18 +9,13 @@ import ShortAnswerComponent from './questionType/ShortAnswerComponent';
 import FillInTheBlankComponent from './questionType/FillInTheBlankComponent';
 import CategoryMatchingComponent from './questionType/CategoryMatchingComponent';
 import PartNavigation from './PartNavigation';
-import aud from '../assets/audio.mp3';
-
-// ... (previous styled components remain the same)
-
-const AudioPlayer = styled.audio`
-  width: 100%;
-  margin-bottom: 20px;
-`;
 
 const ContentContainer = styled.div`
-  margin-bottom: 60px; // Add space for the footer
+  margin-bottom: 60px;
+  padding: 40px;
+   
 `;
+
 const SubmitButton = styled(Button)`
   margin-top: 20px;
 `;
@@ -29,19 +25,11 @@ const ProgressWrapper = styled.div`
   margin-bottom: 20px;
 `;
 
-
 const ListeningSection = () => {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [audioTime, setAudioTime] = useState(0);
   const currentPart = useSelector(state => state.currentPart);
   const answers = useSelector(state => state.answers);
   const dispatch = useDispatch();
-
-  const currentPartData = useMemo(() => {
-    return listeningData.parts.find(part => 
-      audioTime >= part.startTime && audioTime < part.endTime
-    ) || listeningData.parts[0];
-  }, [audioTime]);
 
   const totalQuestions = useMemo(() => listeningData.parts.reduce(
     (total, part) => total + part.questions.reduce(
@@ -57,34 +45,23 @@ const ListeningSection = () => {
   );
 
   useEffect(() => {
-    const audio = document.getElementById('audioPlayer');
+    const audio = new Audio(listeningData.audio.src);
     
-    const handleTimeUpdate = () => {
-      setAudioTime(audio.currentTime);
-    };
-
     const handleEnded = () => {
       setIsPlaying(false);
       message.success('You have completed the listening test!');
     };
 
-    audio.addEventListener('timeupdate', handleTimeUpdate);
     audio.addEventListener('ended', handleEnded);
 
     return () => {
-      audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.removeEventListener('ended', handleEnded);
+      audio.pause();
     };
   }, []);
 
-  useEffect(() => {
-    if (currentPartData.part !== currentPart) {
-      dispatch(setCurrentPart(currentPartData.part));
-    }
-  }, [currentPartData, currentPart, dispatch]);
-
   const startListening = () => {
-    const audio = document.getElementById('audioPlayer');
+    const audio = new Audio(listeningData.audio.src);
     audio.play();
     setIsPlaying(true);
   };
@@ -94,10 +71,6 @@ const ListeningSection = () => {
   };
 
   const handlePartChange = (partNumber) => {
-    const targetPart = listeningData.parts[partNumber - 1];
-    const audio = document.getElementById('audioPlayer');
-    audio.currentTime = targetPart.startTime;
-    setAudioTime(targetPart.startTime);
     dispatch(setCurrentPart(partNumber));
   };
 
@@ -144,24 +117,35 @@ const ListeningSection = () => {
     });
   };
 
+  const handleQuestionClick = (questionNo) => {
+    for (let part of listeningData.parts) {
+      for (let questionSet of part.questions) {
+        const question = questionSet.questions.find(q => q.questionNo === questionNo);
+        if (question) {
+          dispatch(setCurrentPart(part.part));
+          return;
+        }
+      }
+    }
+  };
+
   return (
     <ContentContainer>
       <h1>IELTS Listening Test</h1>
      
-      <h2>Part {currentPartData.part}</h2>
-      <AudioPlayer id="audioPlayer" controls src={listeningData.audio.src} />
+      <h2>Part {currentPart}</h2>
       {!isPlaying && (
         <Button onClick={startListening} type="primary">
           Start Listening
         </Button>
       )}
       <ProgressWrapper>
-        <Progress 
+        {/* <Progress 
           percent={(answeredQuestions / totalQuestions) * 100} 
           format={() => `${answeredQuestions}/${totalQuestions}`}
-        />
+        /> */}
       </ProgressWrapper>
-      {currentPartData.questions.map((questionSet, index) => (
+      {listeningData.parts.find(part => part.part === currentPart).questions.map((questionSet, index) => (
         <div key={index}>
           {renderQuestionSet(questionSet)}
         </div>
@@ -170,6 +154,8 @@ const ListeningSection = () => {
         parts={listeningData.parts}
         currentPart={currentPart}
         onPartChange={handlePartChange}
+        onQuestionClick={handleQuestionClick}
+        answers={answers}
         onSubmit={handleSubmit}
       />
     </ContentContainer>
