@@ -67,7 +67,7 @@ const QuestionNumber = styled.div`
   font-size: 12px;
   padding: 2px 4px;
   border-radius: 3px;
-  background-color: ${props => props.isAnswered ? '#52c41a' : 'transparent'};
+  background-color: ${props => props.isAnswered ? '#1E90FF' : 'transparent'};
   color: ${props => props.isAnswered ? '#fff' : 'inherit'};
   cursor: pointer;
 
@@ -92,7 +92,7 @@ const SubmitButtonContainer = styled.div`
 const SubmitButton = styled.button`
   width: 100%;
   height: 40px;
-  background-color: #52c41a;
+  background-color: #1E90FF;
   color: #fff;
   border: none;
   border-radius: 4px;

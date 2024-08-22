@@ -68,6 +68,7 @@ const QuestionSet = styled.div`
 const SubmitButtonWrapper = styled.div`
   text-align: center;
   margin-top: 20px;
+
 `;
 
 const TimerWrapper = styled.div`
